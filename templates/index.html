@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dota 2 MMR & Heroes Tracker</title>
+  <style>
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: -1;
+    }
+
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+
+    .content-box {
+      background: rgba(20, 20, 30, 0.85);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(90, 200, 255, 0.2);
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+      margin-top: 0;
+      color: #4fc3f7;
+      text-shadow: 0 0 6px rgba(79, 195, 247, 0.6);
+    }
+
+    form {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    input[type="text"] {
+      padding: 10px 15px;
+      width: 280px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-right: 8px;
+      background: rgba(30, 30, 40, 0.9);
+      color: white;
+      border: 1px solid #444;
+    }
+
+    input[type="text"]::placeholder {
+      color: #aaa;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #1565c0;
+    }
+
+    .error {
+      color: #ff6b6b;
+      text-align: center;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+
+    .stats {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+      color: #a3d9ff;
+    }
+
+    /* Герои */
+    .heroes {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 25px 0;
+    }
+
+    .hero-card {
+      text-align: center;
+      background: rgba(30, 30, 50, 0.7);
+      padding: 12px;
+      border-radius: 8px;
+      min-width: 110px;
+      border: 1px solid #337ab7;
+    }
+
+    .hero-icon {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      margin-bottom: 8px;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .hero-name {
+      font-weight: bold;
+      color: #64b5f6;
+      font-size: 14px;
+    }
+
+    .hero-stats {
+      font-size: 12px;
+      color: #bbb;
+    }
+
+
+    .chart-section {
+      text-align: center;
+      margin: 25px 0;
+    }
+
+    .chart-img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+
+    .history-box {
+      background: rgba(25, 25, 40, 0.7);
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 30px;
+      border: 1px solid #3a3a5a;
+    }
+
+    .history-box h3 {
+      color: #81c784;
+      margin-top: 0;
+    }
+
+    .history-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .history-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(100, 100, 120, 0.3);
+      font-size: 14px;
+      color: #e0e0e0;
+    }
+
+    .history-list li:last-child {
+      border-bottom: none;
+    }
+
+    .history-date {
+      color: #aaa;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content-box">
+      <h1>Dota 2 Tracker</h1>
+
+      <form method="POST">
+        <input type="text" name="steam_id" placeholder="Steam ID (только цифры)" required>
+        <button type="submit">🔍 Найти</button>
+      </form>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      {% if mmr or top_heroes %}
+        <div class="stats">
+          <p><strong>MMR:</strong> <span style="color:#4db6ac;">{{ mmr }}</span></p>
+          <p><strong>Winrate (20 матчей):</strong> <span style="color:#4db6ac;">{{ winrate }}%</span></p>
+        </div>
+
+        {% if top_heroes %}
+          <h3> Топ-3 героя</h3>
+          <div class="heroes">
+            {% for hero in top_heroes %}
+              {% set h = HEROES.get(hero.hero_id) %}
+              <div class="hero-card">
+                {% if h %}
+                  <img src="{{ h.icon }}" class="hero-icon" onerror="this.src='https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/icons/hero_phantom_assassin.png';">
+                  <div class="hero-name">{{ h.name }}</div>
+                {% else %}
+                  <img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/icons/hero_default.png" class="hero-icon">
+                  <div class="hero-name">Неизвестный</div>
+                {% endif %}
+                <div class="hero-stats">Игр: {{ hero.games }}<br>Побед: {{ hero.win }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if chart_url %}
+          <div class="chart-section">
+            <h3>Winrate за последние 30 дней</h3>
+            <img src="data:image/png;base64,{{ chart_url }}" class="chart-img" alt="Winrate chart">
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <div class="history-box">
+        <h3> Недавние поиски</h3>
+        {% if recent_searches %}
+          <ul class="history-list">
+            {% for steam_id, ts, mmr_hist, wr_hist in recent_searches %}
+              <li>
+                SteamID: {{ steam_id }} |
+                MMR: {{ mmr_hist or 'N/A' }} |
+                Winrate: {{ "%.1f"|format(wr_hist) if wr_hist else 'N/A' }}%
+                <span class="history-date">{{ ts[:10] }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p style="text-align:center; color:#888;">История пуста</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
