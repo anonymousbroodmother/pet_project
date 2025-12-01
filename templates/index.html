@@ -5,191 +5,205 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dota 2 MMR & Heroes Tracker</title>
   <style>
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: white;
+    overflow-x: hidden;
+  }
 
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background-image: url("{{ url_for('static', filename='bg.jpg') }}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: white;
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: -1;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+  }
+
+  .content-box {
+    background: rgba(20, 20, 30, 0.85);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(90, 200, 255, 0.2);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s forwards;
+  }
+
+
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
+  }
 
-
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.65);
-      z-index: -1;
+  @keyframes floatIn {
+    from {
+      opacity: 0;
+      transform: translateY(15px) scale(0.95);
     }
-
-
-    .container {
-      max-width: 900px;
-      margin: 20px auto;
-      padding: 20px;
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
+  }
+
+  @keyframes pulseError {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
 
 
-    .content-box {
-      background: rgba(20, 20, 30, 0.85);
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(90, 200, 255, 0.2);
-    }
+  .heroes {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 25px 0;
+  }
 
-    h1, h2, h3 {
-      text-align: center;
-      margin-top: 0;
-      color: #4fc3f7;
-      text-shadow: 0 0 6px rgba(79, 195, 247, 0.6);
-    }
+  .hero-card {
+    text-align: center;
+    background: rgba(30, 30, 50, 0.7);
+    padding: 12px;
+    border-radius: 8px;
+    min-width: 110px;
+    border: 1px solid #337ab7;
+    opacity: 0;
+    animation: floatIn 0.5s forwards;
+    animation-delay: 0ms;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
 
-    form {
-      text-align: center;
-      margin: 20px 0;
-    }
+  .hero-card:nth-child(1) { animation-delay: 100ms; }
+  .hero-card:nth-child(2) { animation-delay: 200ms; }
+  .hero-card:nth-child(3) { animation-delay: 300ms; }
 
-    input[type="text"] {
-      padding: 10px 15px;
-      width: 280px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      margin-right: 8px;
-      background: rgba(30, 30, 40, 0.9);
-      color: white;
-      border: 1px solid #444;
-    }
+  .hero-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 150, 255, 0.4);
+    z-index: 2;
+    position: relative;
+  }
 
-    input[type="text"]::placeholder {
-      color: #aaa;
-    }
+  .hero-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    margin-bottom: 8px;
+    transition: transform 0.3s ease;
+  }
 
-    button {
-      padding: 10px 20px;
-      background: #1976d2;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background: #1565c0;
-    }
-
-    .error {
-      color: #ff6b6b;
-      text-align: center;
-      margin: 15px 0;
-      font-weight: bold;
-    }
-
-    .stats {
-      text-align: center;
-      margin: 20px 0;
-      font-size: 18px;
-      color: #a3d9ff;
-    }
-
-    /* Герои */
-    .heroes {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin: 25px 0;
-    }
-
-    .hero-card {
-      text-align: center;
-      background: rgba(30, 30, 50, 0.7);
-      padding: 12px;
-      border-radius: 8px;
-      min-width: 110px;
-      border: 1px solid #337ab7;
-    }
-
-    .hero-icon {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      margin-bottom: 8px;
-      image-rendering: -webkit-optimize-contrast;
-    }
-
-    .hero-name {
-      font-weight: bold;
-      color: #64b5f6;
-      font-size: 14px;
-    }
-
-    .hero-stats {
-      font-size: 12px;
-      color: #bbb;
-    }
+  .hero-card:hover .hero-icon {
+    transform: scale(1.1);
+  }
 
 
-    .chart-section {
-      text-align: center;
-      margin: 25px 0;
-    }
+  .chart-section {
+    text-align: center;
+    margin: 25px 0;
+    opacity: 0;
+    animation: fadeIn 0.8s 0.4s forwards;
+  }
 
-    .chart-img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      margin-top: 10px;
-    }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  .chart-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
 
 
-    .history-box {
-      background: rgba(25, 25, 40, 0.7);
-      padding: 15px;
-      border-radius: 8px;
-      margin-top: 30px;
-      border: 1px solid #3a3a5a;
-    }
+  .error {
+    color: #ff6b6b;
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+    opacity: 0;
+    animation: pulseError 0.4s 0.1s infinite;
+  }
 
-    .history-box h3 {
-      color: #81c784;
-      margin-top: 0;
-    }
 
-    .history-list {
-      list-style: none;
-      padding: 0;
-    }
+  button {
+    padding: 10px 20px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
 
-    .history-list li {
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(100, 100, 120, 0.3);
-      font-size: 14px;
-      color: #e0e0e0;
-    }
+  button:hover {
+    background: #1565c0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
 
-    .history-list li:last-child {
-      border-bottom: none;
-    }
+  button:active {
+    transform: translateY(0);
+  }
 
-    .history-date {
-      color: #aaa;
-      font-size: 12px;
-    }
-  </style>
+
+  .history-box {
+    background: rgba(25, 25, 40, 0.7);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 30px;
+    border: 1px solid #3a3a5a;
+    opacity: 0;
+    animation: fadeIn 0.6s 0.2s forwards;
+  }
+
+
+  h1, h2, h3 {
+    text-align: center;
+    margin-top: 0;
+    color: #4fc3f7;
+    text-shadow: 0 0 6px rgba(79, 195, 247, 0.6);
+    opacity: 0;
+    animation: fadeIn 1s forwards;
+  }
+
+  h1 { animation-delay: 0.1s; }
+  h3 { animation-delay: 0.3s; }
+
+
+  .stats {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 18px;
+    color: #a3d9ff;
+    opacity: 0;
+    animation: fadeIn 0.7s 0.2s forwards;
+  }
+</style>
 </head>
 <body>
   <div class="container">
