@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сравнение игроков — Dota 2 Tracker</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-image: url("{{ url_for('static', filename='bg.jpg') }}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: -1;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    .content-box {
+      background: rgba(20, 20, 30, 0.85);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(90, 200, 255, 0.2);
+    }
+    .nav {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .nav a {
+      color: #4fc3f7;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    h1 {
+      text-align: center;
+      color: #64b5f6;
+      margin-top: 0;
+    }
+    form {
+      text-align: center;
+      margin: 20px 0;
+    }
+    input {
+      padding: 10px;
+      margin: 5px;
+      width: 160px;
+      background: rgba(40, 40, 60, 0.8);
+      color: white;
+      border: 1px solid #444;
+      border-radius: 6px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #43a047;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .error {
+      color: #ff6b6b;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 30px 0;
+      background: rgba(30, 30, 40, 0.6);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 15px;
+      text-align: center;
+      border: 1px solid rgba(80, 120, 180, 0.3);
+    }
+    .comparison-table th {
+      background: rgba(40, 60, 90, 0.8);
+      color: #a3d9ff;
+    }
+    .player-col {
+      background: rgba(25, 40, 70, 0.5);
+    }
+    .vs-cell {
+      background: rgba(60, 60, 80, 0.7);
+      font-weight: bold;
+      font-size: 18px;
+      color: #ffca28;
+    }
+    .hero-icon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      margin-top: 8px;
+    }
+    .player-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content-box">
+      <div class="nav">
+        <a href="/">← Трекер</a>
+        <a href="/compare">⚔️ Сравнить</a>
+      </div>
+
+      <h1>⚔️ Сравнение игроков</h1>
+
+      <form method="POST">
+        <input type="text" name="steam_id1" value="{{ request.args.get('steam_id1', '') }}" placeholder="Steam ID 1" required>
+        <span style="margin: 0 10px; color: #888;">VS</span>
+        <input type="text" name="steam_id2" placeholder="Steam ID 2" required>
+        <br>
+        <button type="submit">Сравнить</button>
+      </form>
+
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+
+      {% if player1 and player2 %}
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Характеристика</th>
+              <th class="player-col">
+                <img src="{{ player1.avatar }}" class="player-avatar" alt="Avatar">
+                <div>{{ player1.name or player1.steam_id }}</div>
+              </th>
+              <th class="vs-cell">VS</th>
+              <th class="player-col">
+                <img src="{{ player2.avatar }}" class="player-avatar" alt="Avatar">
+                <div>{{ player2.name or player2.steam_id }}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Победы</td>
+              <td>{{ "{:,}".format(player1.wins_total) }}</td>
+              <td class="vs-cell"></td>
+              <td>{{ "{:,}".format(player2.wins_total) }}</td>
+            </tr>
+            <tr>
+              <td>Поражения</td>
+              <td>{{ "{:,}".format(player1.losses_total) }}</td>
+              <td class="vs-cell"></td>
+              <td>{{ "{:,}".format(player2.losses_total) }}</td>
+            </tr>
+            <tr>
+              <td>Общий винрейт</td>
+              <td>{{ player1.winrate_total }}%</td>
+              <td class="vs-cell"></td>
+              <td>{{ player2.winrate_total }}%</td>
+            </tr>
+            <tr>
+              <td>Последние 20 матчей</td>
+              <td>{{ player1.winrate }}%</td>
+              <td class="vs-cell"></td>
+              <td>{{ player2.winrate }}%</td>
+            </tr>
+            <tr>
+              <td>Любимый герой</td>
+              <td>
+                {% if player1.top_hero %}
+                  {% set h1 = HEROES.get(player1.top_hero.hero_id) %}
+                  {% if h1 %}
+                    <img src="{{ h1.icon }}" class="hero-icon"><br>{{ h1.name }}
+                  {% else %}
+                    {{ player1.top_hero.games }} игр
+                  {% endif %}
+                {% else %}
+                  Нет данных
+                {% endif %}
+              </td>
+              <td class="vs-cell"></td>
+              <td>
+                {% if player2.top_hero %}
+                  {% set h2 = HEROES.get(player2.top_hero.hero_id) %}
+                  {% if h2 %}
+                    <img src="{{ h2.icon }}" class="hero-icon"><br>{{ h2.name }}
+                  {% else %}
+                    {{ player2.top_hero.games }} игр
+                  {% endif %}
+                {% else %}
+                  Нет данных
+                {% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
